@@ -2,3 +2,4 @@
 172.16.212.129 ansible_python_interpreter=/usr/bin/python3.13
 172.16.212.130 ansible_python_interpreter=/usr/bin/python3.13
 172.16.212.131 ansible_python_interpreter=/usr/bin/python3.13
+172.16.212.133 ansible_python_interpreter=/usr/bin/python3.9
