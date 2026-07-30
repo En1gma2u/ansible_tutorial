@@ -1,44 +1,85 @@
 ---
-
-- hosts: all
+- name: Install and configure Web Servers
+  hosts: all_vms
   become: true
+
   tasks:
 
-    - name: Update DNF repository index
+    # --- Ubuntu / Debian Tasks ---
+    - name: Update APT repository index (Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install Apache, PHP, and PHP-FPM (Ubuntu)
+      ansible.builtin.apt:
+        name:
+          - apache2
+          - php
+          - php-fpm
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Start and enable Apache service (Ubuntu)
+      ansible.builtin.service:
+        name: apache2
+        state: started
+        enabled: true
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Get installed PHP version (Ubuntu)
+      ansible.builtin.command: php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;"
+      register: php_version_out
+      changed_when: false
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Start and enable PHP-FPM service (Ubuntu)
+      ansible.builtin.service:
+        name: "php{{ php_version_out.stdout }}-fpm"
+        state: started
+        enabled: true
+      when: ansible_facts['os_family'] == "Debian"
+
+    # --- RHEL / Rocky Tasks ---
+    - name: Update DNF repository index (Rocky Linux)
       ansible.builtin.dnf:
         update_cache: true
+      when: ansible_facts['os_family'] == "RedHat"
 
-    - name: Install Apache (httpd), PHP, and PHP-FPM
+    - name: Install httpd, PHP, and PHP-FPM (RHEL)
       ansible.builtin.dnf:
         name:
           - httpd
           - php
           - php-fpm
-        state: latest
+        state: present
+      when: ansible_facts['os_family'] == "RedHat"
 
-    - name: Start and enable PHP-FPM service
-      ansible.builtin.service:
-        name: php-fpm
-        state: started
-        enabled: true
-
-    - name: Start and enable httpd service
+    - name: Start and enable httpd service (RHEL)
       ansible.builtin.service:
         name: httpd
         state: started
         enabled: true
+      when: ansible_facts['os_family'] == "RedHat"
 
-    - name: Permit HTTP traffic in firewalld
+    - name: Start and enable PHP-FPM service (RHEL)
+      ansible.builtin.service:
+        name: php-fpm
+        state: started
+        enabled: true
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Permit HTTP traffic in firewalld (RHEL)
       ansible.posix.firewalld:
         service: http
         permanent: true
         state: enabled
         immediate: true
+      when: ansible_facts['os_family'] == "RedHat"
 
+    # --- Common Tasks ---
     - name: Deploy test PHP index page
       ansible.builtin.copy:
         content: "<?php phpinfo(); ?>"
         dest: /var/www/html/index.php
-        owner: apache
-        group: apache
         mode: '0644'
