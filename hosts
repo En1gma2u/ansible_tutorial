@@ -1,17 +1,25 @@
-[control_nodes]
-192.168.56.10
-
+# --- Functional Role Groups ---
 [webservers]
 192.168.56.11
 
 [dbservers]
 192.168.56.12
 
-[all_vms:children]
-control_nodes
-webservers
-dbservers
+# --- OS Family Groups ---
+[rhel_family]    # Rocky Linux 9
+192.168.56.10
+192.168.56.11
+192.168.56.12
 
+[debian_family]  # Ubuntu 22.04 LTS
+192.168.56.13
+
+# --- Parent Group ---
+[all_vms:children]
+rhel_family
+debian_family
+
+# --- Group Variables ---
 [all_vms:vars]
 ansible_user=vagrant
-ansible_python_interpreter=/usr/bin/python3.9
+ansible_python_interpreter=/usr/bin/python3
