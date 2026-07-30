@@ -1,0 +1,44 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+    - name: Update DNF repository index
+      ansible.builtin.dnf:
+        update_cache: true
+
+    - name: Install Apache (httpd), PHP, and PHP-FPM
+      ansible.builtin.dnf:
+        name:
+          - httpd
+          - php
+          - php-fpm
+        state: latest
+
+    - name: Start and enable PHP-FPM service
+      ansible.builtin.service:
+        name: php-fpm
+        state: started
+        enabled: true
+
+    - name: Start and enable httpd service
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+
+    - name: Permit HTTP traffic in firewalld
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Deploy test PHP index page
+      ansible.builtin.copy:
+        content: "<?php phpinfo(); ?>"
+        dest: /var/www/html/index.php
+        owner: apache
+        group: apache
+        mode: '0644'

@@ -1,0 +1,17 @@
+[control_nodes]
+192.168.56.10
+
+[webservers]
+192.168.56.11
+
+[dbservers]
+192.168.56.12
+
+[all_vms:children]
+control_nodes
+webservers
+dbservers
+
+[all_vms:vars]
+ansible_user=vagrant
+ansible_python_interpreter=/usr/bin/python3.9
