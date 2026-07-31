@@ -1,43 +1,22 @@
 ---
-- name: Install and configure web server
-  hosts: all
+
+- hosts: all
   become: true
   tasks:
 
-    - name: Set OS-specific variables
-      set_fact:
-        web_pkg: "{{ 'apache2' if ansible_facts['os_family'] == 'Debian' else 'httpd' }}"
-        php_pkgs: "{{ ['php', 'php-fpm', 'libapache2-mod-php'] if ansible_facts['os_family'] == 'Debian' else ['php', 'php-fpm'] }}"
-        web_service: "{{ 'apache2' if ansible_facts['os_family'] == 'Debian' else 'httpd' }}"
+  - name: install apache and php for Ubuntu servers
+    apt:
+      name:
+        - apache2
+        - libapache2-mod-php
+      state: latest
+      update_cache: yes
+    when: ansible_facts['distribution'] == "Ubuntu"
 
-    - name: Update package cache and install web server
-      package:
-        name: "{{ web_pkg }}"
-        state: latest
-        update_cache: yes
-
-    - name: Install PHP packages
-      package:
-        name: "{{ php_pkgs }}"
-        state: latest
-
-    - name: Ensure web service is started and enabled
-      service:
-        name: "{{ web_service }}"
-        state: started
-        enabled: yes
-
-    - name: Ensure php-fpm service is running (RedHat only)
-      service:
-        name: php-fpm
-        state: started
-        enabled: yes
-      when: ansible_facts['os_family'] == 'RedHat'
-
-    - name: Allow HTTP through firewall (RedHat only)
-      firewalld:
-        service: http
-        permanent: yes
-        state: enabled
-        immediate: yes
-      when: ansible_facts['os_family'] == 'RedHat'
+  - name: install httd and php for Rocky9(RHEL)
+    dnf:
+      name:
+        - httpd
+        - php
+      state: latest    
+    when: ansible_facts['distribution'] == "Rocky"
