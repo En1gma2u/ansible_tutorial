@@ -7,3 +7,6 @@
 
 [file_servers]
 192.168.56.10
+
+[workstations]
+192.168.56.1   # Replace with your laptop's actual IP address

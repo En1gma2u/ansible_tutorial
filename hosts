@@ -10,6 +10,9 @@
 [file_servers]
 192.168.56.10
 
+[workstations]
+192.168.56.1 ansible_user=gideon
+
 # --- OS Family Groups ---
 [rhel_family]    # Rocky Linux 9
 192.168.56.10
@@ -23,6 +26,7 @@
 [all_vms:children]
 rhel_family
 debian_family
+workstations
 
 # --- Group Variables ---
 [all_vms:vars]

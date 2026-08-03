@@ -11,12 +11,64 @@
       update_cache: yes
     when: ansible_facts['distribution'] == "Rocky"
 
+  - name: start httpd (Rocky)
+    tags: apache, rocky, httpd
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+    when: ansible_facts['distribution'] == "Rocky"
+
   - name: install updates (Ubuntu)
     tags: always
     apt:
       upgrade: dist
       update_cache: yes
     when: ansible_facts['distribution'] == "Ubuntu"
+
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: create maggie user
+    tags: always
+    user:
+      name: maggie
+      groups: root
+
+  - name: add ssh key for maggie
+    tags: always
+    authorized_key:
+      user: maggie
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILyFG0TkYP3mnCaN4x3t8si0OvsD/NXiz29WT4dzoRqp ansible"
+
+  - name: add sudoers file for maggie
+    tags: always
+    copy:
+      src: sudoer_maggie
+      dest: /etc/sudoers.d/maggie
+      owner: root
+      group: root
+      mode: 0440  
+
+- hosts: workstations
+  become: true
+  tasks:
+
+  - name: install unzip package
+    package:
+      name: unzip
+      state: present
+
+  - name: install terraform
+    unarchive:
+      src: https://releases.hashicorp.com/terraform/0.12.28/terraform_0.12.28_linux_amd64.zip
+      dest: /usr/local/bin
+      remote_src: yes
+      mode: '0755'
+      owner: root
+      group: root
 
 
 - hosts: web_servers
@@ -39,8 +91,33 @@
       name:
         - httpd
         - php
-      state: latest    
+      state: latest
     when: ansible_facts['distribution'] == "Rocky"
+
+  - name: change e-mail address for admin
+    tags: apache,rocky,httpd
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^ServerAdmin'
+      line: ServerAdmin somebody@somehwere.net
+    when: ansible_facts['distribution'] == "Rocky"
+    register: httpd
+
+  - name: restart httpd(Rocky)
+    tags: apache,rocky,httpd
+    service:
+      name: httpd
+      state: restarted
+    when: httpd.changed
+
+  - name: copy defaul html file for site
+    tags: apache,apache2,httpd
+    copy:
+      src: default_sites.html
+      dest: /var/www/html/index.html
+      owner: root
+      group: root
+      mode: '0644'
 
 
 - hosts: db_servers
@@ -49,7 +126,7 @@
 
   - name: install mariadb package (Rocky)
     tags: rocky,db,mariadb
-    dnf: 
+    dnf:
       name: mariadb
       state: latest
     when: ansible_facts['distribution'] == "Rocky"
